@@ -81,12 +81,11 @@
 				"     errorHandlingOption: 'stopOnFirstError',",
 				"     mapColumn(",
 				"          cliente_id,",
-				"          nombre,",
+				"          nombre_cliente = nombre,",
 				"          email,",
 				"          telefono,",
 				"          ciudad,",
-				"          fecha_registro,",
-				"          segmento",
+				"          fecha_registro",
 				"     )) ~> sink1"
 			]
 		}
