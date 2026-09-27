@@ -1,0 +1,46 @@
+{
+	"name": "promociones_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sql_SISGER_TAREA",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "sql"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "promocion_id",
+				"type": "varchar"
+			},
+			{
+				"name": "nombre_promocion",
+				"type": "varchar"
+			},
+			{
+				"name": "porcentaje_descuento",
+				"type": "decimal",
+				"precision": 5,
+				"scale": 2
+			},
+			{
+				"name": "fecha_inicio",
+				"type": "date"
+			},
+			{
+				"name": "fecha_fin",
+				"type": "date"
+			},
+			{
+				"name": "activa",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "promociones"
+		}
+	}
+}

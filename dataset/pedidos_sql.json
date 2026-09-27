@@ -1,0 +1,58 @@
+{
+	"name": "pedidos_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sql_SISGER_TAREA",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "sql"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "pedido_id",
+				"type": "varchar"
+			},
+			{
+				"name": "cliente_id",
+				"type": "varchar"
+			},
+			{
+				"name": "restaurante_id",
+				"type": "varchar"
+			},
+			{
+				"name": "sucursal_id",
+				"type": "varchar"
+			},
+			{
+				"name": "repartidor_id",
+				"type": "varchar"
+			},
+			{
+				"name": "fecha_pedido",
+				"type": "date"
+			},
+			{
+				"name": "monto_total",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "metodo_pago",
+				"type": "varchar"
+			},
+			{
+				"name": "estado_pedido",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "pedidos"
+		}
+	}
+}

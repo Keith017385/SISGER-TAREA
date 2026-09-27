@@ -1,0 +1,51 @@
+{
+	"name": "entregas_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sql_SISGER_TAREA",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "sql"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "entrega_id",
+				"type": "varchar"
+			},
+			{
+				"name": "pedido_id",
+				"type": "varchar"
+			},
+			{
+				"name": "repartidor_id",
+				"type": "varchar"
+			},
+			{
+				"name": "fecha_entrega",
+				"type": "date"
+			},
+			{
+				"name": "tiempo_entrega_min",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "estado_entrega",
+				"type": "varchar"
+			},
+			{
+				"name": "costo_envio",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "entregas"
+		}
+	}
+}
