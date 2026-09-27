@@ -24,6 +24,9 @@
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
 				}
 			],
 			"scriptLines": [
@@ -38,8 +41,35 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
-				"source1 derive() ~> derivedColumn1",
-				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"source1 derive(promocion_id = iif(isNull(promocion_id), '', trim(promocion_id)),",
+				"          nombre_promocion = iif(isNull(nombre_promocion), '', trim(nombre_promocion)),",
+				"          fecha_inicio = iif(isNull(fecha_inicio), '', trim(fecha_inicio)),",
+				"          fecha_fin = iif(isNull(fecha_fin), '', trim(fecha_fin)),",
+				"          porcentaje_descuento = iif(isNull(porcentaje_descuento), '', trim(porcentaje_descuento)),",
+				"          canal_aplicable = iif(isNull(canal_aplicable), '', trim(canal_aplicable))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(promocion_id)\r",
+				"&& promocion_id != ''\r",
+				"&& !isNull(nombre_promocion)\r",
+				"&& nombre_promocion != ''\r",
+				"&& !isNull(fecha_inicio)\r",
+				"&& fecha_inicio != ''\r",
+				"&& !isNull(fecha_fin)\r",
+				"&& fecha_fin != ''\r",
+				"&& !isNull(porcentaje_descuento)\r",
+				"&& porcentaje_descuento != ''\r",
+				"&& !isNull(canal_aplicable)\r",
+				"&& canal_aplicable != ''\r",
+				"&& regexMatch(fecha_inicio, '^[0-9]{4}-[0-9]{2}-[0-9]{2}$')\r",
+				"&& regexMatch(fecha_fin, '^[0-9]{4}-[0-9]{2}-[0-9]{2}$')\r",
+				"&& isDate(fecha_inicio, 'yyyy-MM-dd')\r",
+				"&& isDate(fecha_fin, 'yyyy-MM-dd')\r",
+				"&& regexMatch(porcentaje_descuento, '^[0-9]+([.][0-9]+)?$')\r",
+				"&& toDecimal(porcentaje_descuento, 10, 2) > 0\r",
+				"&& toDecimal(porcentaje_descuento, 10, 2) <= 100\r",
+				"&& toDate(fecha_fin, 'yyyy-MM-dd')\r",
+				"   >= toDate(fecha_inicio, 'yyyy-MM-dd'),",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          promocion_id as string,",

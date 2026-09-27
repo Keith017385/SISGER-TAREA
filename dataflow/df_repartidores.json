@@ -24,6 +24,12 @@
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -38,8 +44,37 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
-				"source1 derive() ~> derivedColumn1",
-				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"source1 derive(repartidor_id = iif(isNull(repartidor_id), '', trim(repartidor_id)),",
+				"          nombre_repartidor = iif(isNull(nombre_repartidor), '', trim(nombre_repartidor)),",
+				"          tipo_vehiculo = iif(isNull(tipo_vehiculo), '', trim(tipo_vehiculo)),",
+				"          ciudad_base = iif(isNull(ciudad_base), '', trim(ciudad_base)),",
+				"          fecha_alta = iif(isNull(fecha_alta), '', trim(fecha_alta)),",
+				"          activo = iif(isNull(activo), '', trim(activo))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(repartidor_id)\r",
+				"&& trim(repartidor_id) != ''\r",
+				"&& !isNull(nombre_repartidor)\r",
+				"&& trim(nombre_repartidor) != ''\r",
+				"&& !isNull(tipo_vehiculo)\r",
+				"&& trim(tipo_vehiculo) != ''\r",
+				"&& !isNull(ciudad_base)\r",
+				"&& trim(ciudad_base) != ''\r",
+				"&& !isNull(fecha_alta)\r",
+				"&& trim(fecha_alta) != ''\r",
+				"&& isDate(fecha_alta, 'yyyy-MM-dd')\r",
+				"&& !isNull(activo)\r",
+				"&& trim(activo) != ''\r",
+				"&& (\r",
+				"    activo == 'Sí'\r",
+				"    ||\r",
+				"    activo == 'No'\r",
+				"),",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos derive(repartidor_id = toString(repartidor_id),",
+				"          nombre_repartidor = toString(nombre_repartidor),",
+				"          tipo_vehiculo = toString(tipo_vehiculo),",
+				"          ciudad_base = toString(ciudad_base),",
+				"          fecha_alta = toDate(fecha_alta,'yyyy-MM-dd')) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          repartidor_id as string,",
@@ -56,7 +91,15 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          repartidor_id,",
+				"          nombre_repartidor,",
+				"          tipo_vehiculo,",
+				"          ciudad_base,",
+				"          fecha_alta,",
+				"          activo",
+				"     )) ~> sink1"
 			]
 		}
 	}

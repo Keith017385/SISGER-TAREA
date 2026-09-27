@@ -24,6 +24,12 @@
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -37,8 +43,32 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
-				"source1 derive() ~> derivedColumn1",
-				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"source1 derive(restaurante_id = iif(isNull(restaurante_id), '', trim(restaurante_id)),",
+				"          nombre_restaurante = iif(isNull(nombre_restaurante), '', trim(nombre_restaurante)),",
+				"          tipo_cocina = iif(isNull(tipo_cocina), '', trim(tipo_cocina)),",
+				"          calificacion_promedio = iif(isNull(calificacion_promedio), '', trim(toString(calificacion_promedio))),",
+				"          activo = iif(isNull(activo), '', trim(activo))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(restaurante_id)\r",
+				"&& trim(restaurante_id) != ''\r",
+				"&& !isNull(nombre_restaurante)\r",
+				"&& trim(nombre_restaurante) != ''\r",
+				"&& !isNull(tipo_cocina)\r",
+				"&& trim(tipo_cocina) != ''\r",
+				"&& !isNull(calificacion_promedio)\r",
+				"&& trim(calificacion_promedio) != ''\r",
+				"&& isDecimal(calificacion_promedio)\r",
+				"&& toDecimal(calificacion_promedio) >= 0\r",
+				"&& toDecimal(calificacion_promedio) <= 5\r",
+				"&& !isNull(activo)\r",
+				"&& trim(activo) != ''\r",
+				"&& (\r",
+				"    activo == 'Sí'\r",
+				"    ||\r",
+				"    activo == 'No'\r",
+				"),",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos derive(calificacion_promedio = toDecimal(calificacion_promedio)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          restaurante_id as string,",
@@ -54,7 +84,14 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          restaurante_id,",
+				"          nombre_restaurante,",
+				"          tipo_cocina,",
+				"          calificacion_promedio,",
+				"          activo",
+				"     )) ~> sink1"
 			]
 		}
 	}
