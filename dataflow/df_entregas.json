@@ -16,6 +16,12 @@
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
 				}
 			],
 			"scriptLines": [
@@ -41,7 +47,25 @@
 				"    isNull(hora_salida) || trim(hora_salida) == '',\r",
 				"    toTimestamp(null(), 'yyyy-MM-dd HH:mm:ss'),\r",
 				"    toTimestamp(trim(hora_salida), 'yyyy-MM-dd HH:mm:ss')\r",
-				")) ~> derivedColumn1"
+				"),",
+				"          distancia_km = toDecimal(trim(toString(distancia_km)), 10, 2),",
+				"          tiempo_entrega_min = toInteger(trim(toString(tiempo_entrega_min)))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(entrega_id)\r",
+				"&& trim(entrega_id) != ''\r",
+				"&& !isNull(pedido_id)\r",
+				"&& trim(pedido_id) != ''\r",
+				"&& !isNull(repartidor_id)\r",
+				"&& trim(repartidor_id) != ''\r",
+				"&& !isNull(hora_salida)\r",
+				"&& !isNull(tiempo_entrega_min)\r",
+				"&& tiempo_entrega_min >= 0\r",
+				"&& !isNull(distancia_km)\r",
+				"&& distancia_km >= 0\r",
+				"&& !isNull(estado_entrega)\r",
+				"&& trim(estado_entrega) != '',",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos aggregate(groupBy(pedido_id,",
+				"          repartidor_id)) ~> aggregate1"
 			]
 		}
 	}
