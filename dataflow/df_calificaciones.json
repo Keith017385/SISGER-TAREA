@@ -1,0 +1,90 @@
+{
+	"name": "df_calificaciones",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "calificaciones_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "calificaciones_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          calificacion_id as string,",
+				"          pedido_id as string,",
+				"          cliente_id as string,",
+				"          fecha_calificacion as date,",
+				"          puntuacion as integer,",
+				"          comentario as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(puntuacion = iif(puntuacion > 5, 5, iif(puntuacion < 1, 1, puntuacion)),",
+				"          comentario = iif(isNull(comentario) || trim(comentario) == '', 'Sin comentario', comentario)) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(calificacion_id) && !isNull(pedido_id) && !isNull(cliente_id) && !isNull(puntuacion) && puntuacion >= 1 && puntuacion <= 5 && !isNull(pedido_id),",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos aggregate(groupBy(pedido_id),",
+				"     cliente_id = first(cliente_id),",
+				"          calificacion_id = first(calificacion_id),",
+				"          fecha_calificacion = first(fecha_calificacion),",
+				"          puntuacion = first(puntuacion),",
+				"          comentario = first(comentario)) ~> aggregate1",
+				"aggregate1 derive(puntuacion = toInteger(puntuacion)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          calificacion_id as string,",
+				"          pedido_id as string,",
+				"          cliente_id as string,",
+				"          puntuacion as decimal(3,2),",
+				"          comentario as string,",
+				"          fecha_calificacion as date",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          calificacion_id,",
+				"          pedido_id,",
+				"          cliente_id,",
+				"          puntuacion,",
+				"          comentario,",
+				"          fecha_calificacion",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

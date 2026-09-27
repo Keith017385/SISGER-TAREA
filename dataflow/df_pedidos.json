@@ -1,0 +1,36 @@
+{
+	"name": "df_pedidos",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "pedidos_sql",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          pedido_id as string,",
+				"          cliente_id as string,",
+				"          restaurante_id as string,",
+				"          sucursal_id as string,",
+				"          repartidor_id as string,",
+				"          fecha_pedido as date,",
+				"          monto_total as decimal(10,2),",
+				"          metodo_pago as string,",
+				"          estado_pedido as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1"
+			]
+		}
+	}
+}
