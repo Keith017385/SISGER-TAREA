@@ -24,6 +24,12 @@
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -40,8 +46,40 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
-				"source1 derive(sucursal_id = iif(isNull(sucursal_id), '', trim(sucursal_id))) ~> derivedColumn1",
-				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"source1 derive(sucursal_id = iif(isNull(sucursal_id), '', trim(sucursal_id)),",
+				"          restaurante_id = iif(isNull(restaurante_id), '', trim(restaurante_id)),",
+				"          nombre_sucursal = iif(isNull(nombre_sucursal), '', trim(nombre_sucursal)),",
+				"          ciudad = iif(isNull(ciudad), '', trim(ciudad)),",
+				"          zona = iif(isNull(zona), '', trim(zona)),",
+				"          direccion = iif(isNull(direccion), '', trim(direccion)),",
+				"          capacidad_mesas = iif(isNull(capacidad_mesas), '', trim(capacidad_mesas)),",
+				"          tiene_delivery = iif(isNull(tiene_delivery), '', trim(tiene_delivery))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(sucursal_id)\r",
+				"&& trim(sucursal_id) != ''\r",
+				"&& !isNull(restaurante_id)\r",
+				"&& trim(restaurante_id) != ''\r",
+				"&& !isNull(nombre_sucursal)\r",
+				"&& trim(nombre_sucursal) != ''\r",
+				"&& !isNull(ciudad)\r",
+				"&& trim(ciudad) != ''\r",
+				"&& !isNull(zona)\r",
+				"&& trim(zona) != ''\r",
+				"&& !isNull(direccion)\r",
+				"&& trim(direccion) != ''\r",
+				"&& !isNull(capacidad_mesas)\r",
+				"&& trim(capacidad_mesas) != ''\r",
+				"&& regexMatch(trim(capacidad_mesas), '^[0-9]+$')\r",
+				"&& toInteger(capacidad_mesas) > 0\r",
+				"&& !isNull(tiene_delivery)\r",
+				"&& trim(tiene_delivery) != ''\r",
+				"&& (\r",
+				"    lower(trim(tiene_delivery)) == 'sí'\r",
+				"    ||\r",
+				"    lower(trim(tiene_delivery)) == 'no'\r",
+				"),",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos derive(capacidad_mesas = toInteger(capacidad_mesas)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          sucursal_id as string,",
@@ -58,7 +96,14 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          sucursal_id,",
+				"          restaurante_id,",
+				"          nombre_sucursal,",
+				"          direccion,",
+				"          ciudad",
+				"     )) ~> sink1"
 			]
 		}
 	}
