@@ -12,8 +12,29 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
-			"transformations": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "inventario_diario_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          inventario_id as string,",
@@ -28,7 +49,58 @@
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> source1"
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(salidas = iif(\r",
+				"    isNull(salidas) || !regexMatch(trim(salidas), '^[0-9]+$'),\r",
+				"    '0',\r",
+				"    trim(salidas)\r",
+				")) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(entradas) && !isNull(salidas) && regexMatch(trim(salidas), '^[0-9]+$'),",
+				"     disjoint: false) ~> split1@(validas, rechazados)",
+				"split1@validas aggregate(groupBy(producto_id),",
+				"     inventario_id = first(inventario_id),",
+				"          fecha_inventario = first(fecha_inventario),",
+				"          sucursal_id = first(sucursal_id),",
+				"          stock_inicial = first(stock_inicial),",
+				"          entradas = first(entradas),",
+				"          salidas = first(salidas),",
+				"          stock_final = first(stock_final),",
+				"          punto_reorden = first(punto_reorden)) ~> aggregate1",
+				"aggregate1 derive(stock_inicial = toInteger(stock_inicial),",
+				"          stock_final = toInteger(stock_final),",
+				"          entradas = toInteger(entradas),",
+				"          salidas = toInteger(salidas),",
+				"          punto_reorden = toInteger(punto_reorden),",
+				"          fecha_inventario = toDate(fecha_inventario)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          inventario_id as string,",
+				"          restaurante_id as string,",
+				"          sucursal_id as string,",
+				"          producto_id as string,",
+				"          fecha as date,",
+				"          stock_inicial as integer,",
+				"          stock_final as integer,",
+				"          unidades_vendidas as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          inventario_id,",
+				"          sucursal_id,",
+				"          producto_id,",
+				"          fecha = fecha_inventario,",
+				"          stock_inicial,",
+				"          stock_final,",
+				"          unidades_vendidas = punto_reorden",
+				"     )) ~> sink1"
 			]
 		}
 	}

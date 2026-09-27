@@ -12,7 +12,15 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "entregas_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "derivedColumn1"
@@ -22,6 +30,9 @@
 				},
 				{
 					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -64,8 +75,43 @@
 				"&& !isNull(estado_entrega)\r",
 				"&& trim(estado_entrega) != '',",
 				"     disjoint: false) ~> split1@(validos, rechazados)",
-				"split1@validos aggregate(groupBy(pedido_id,",
-				"          repartidor_id)) ~> aggregate1"
+				"split1@validos aggregate(groupBy(repartidor_id),",
+				"     entrega_id = count(entrega_id),",
+				"          tiempo_entrega_min = avg(tiempo_entrega_min),",
+				"          distancia_km = sum(distancia_km),",
+				"          hora_salida = first(hora_salida),",
+				"          hora_entrega = first(hora_entrega),",
+				"          estado_entrega = first(estado_entrega),",
+				"          pedido_id = first(pedido_id)) ~> aggregate1",
+				"aggregate1 derive(tiempo_entrega_min = toDecimal(tiempo_entrega_min,10,2)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          entrega_id as string,",
+				"          pedido_id as string,",
+				"          repartidor_id as string,",
+				"          fecha_entrega as date,",
+				"          tiempo_entrega_min as integer,",
+				"          estado_entrega as string,",
+				"          costo_envio as decimal(10,2)",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          entrega_id,",
+				"          pedido_id,",
+				"          repartidor_id,",
+				"          tiempo_entrega_min,",
+				"          estado_entrega,",
+				"          fecha_entrega = hora_entrega,",
+				"          costo_envio = tiempo_entrega_min",
+				"     )) ~> sink1"
 			]
 		}
 	}
