@@ -13,7 +13,17 @@
 				}
 			],
 			"sinks": [],
-			"transformations": [],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          detalle_id as string,",
@@ -26,7 +36,18 @@
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> source1"
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(precio_unitario = toFloat(replace(precio_unitario, ',', '.')),",
+				"          total_linea = toString(toDecimal(toDouble(cantidad) * toDouble(precio_unitario) * (1.0 - iifNull(toDouble(descuento_linea), 0.0)), 10, 2))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(detalle_id) && !isNull(pedido_id) && !isNull(producto_id) && !isNull(precio_unitario) && toDouble(precio_unitario) > 0,",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos aggregate(groupBy(pedido_id,",
+				"          detalle_id),",
+				"     producto_id = first(producto_id),",
+				"          cantidad = first(cantidad),",
+				"          precio_unitario = first(precio_unitario),",
+				"          descuento_linea = first(descuento_linea),",
+				"          total_linea = first(total_linea)) ~> aggregate1"
 			]
 		}
 	}
